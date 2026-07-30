@@ -2,8 +2,14 @@ import React from 'react';
 import { Button } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL ||
+  (window.location.hostname === 'localhost'
+    ? 'http://localhost:4000'
+    : 'https://accident-detection-85af.onrender.com');
+
 function downloadReport() {
-  fetch('/api/accidents')
+  fetch(`${API_BASE_URL}/api/accidents`)
     .then(res => res.json())
     .then(data => {
       const csvHeader = 'ID,Timestamp,Alcohol,Vibration,Distance,Impact,Lat,Lng\n';

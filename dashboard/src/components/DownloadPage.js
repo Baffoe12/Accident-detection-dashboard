@@ -23,7 +23,7 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import WarningIcon from '@mui/icons-material/Warning';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { motion } from 'framer-motion';
-import api from '../api';
+import api, { API_BASE_URL } from '../api';
 
 export default function DownloadPage() {
   const [sensorData, setSensorData] = useState([]);
@@ -62,9 +62,9 @@ export default function DownloadPage() {
         setLoading(true);
         setError(null);
         const [sensorRes, accidentRes, statsRes] = await Promise.allSettled([
-          fetchWithRetry(`${api.API_BASE_URL || ''}/api/sensor/history`),
-          fetchWithRetry(`${api.API_BASE_URL || ''}/api/accidents`),
-          fetchWithRetry(`${api.API_BASE_URL || ''}/api/stats`),
+          fetchWithRetry(`${API_BASE_URL}/api/sensor/history`),
+          fetchWithRetry(`${API_BASE_URL}/api/accidents`),
+          fetchWithRetry(`${API_BASE_URL}/api/stats`),
         ]);
 
         if (sensorRes.status === 'fulfilled') setSensorData(sensorRes.value || []);
