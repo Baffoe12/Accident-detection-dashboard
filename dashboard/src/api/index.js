@@ -1,10 +1,13 @@
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000' : 'https://accident-detection-85af.onrender.com');
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL ||
+  (window.location.hostname === 'localhost'
+    ? 'http://localhost:4000'
+    : 'https://accident-detection-85af.onrender.com');
 
 async function fetchWithTimeout(url, options = {}, timeout = 5000, signal) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-  // Clean up resources
   const cleanup = () => {
     clearTimeout(timeoutId);
     if (signal) {
@@ -32,7 +35,7 @@ async function fetchWithTimeout(url, options = {}, timeout = 5000, signal) {
         'Content-Type': 'application/json',
         ...options.headers,
       },
-      signal: controller.signal
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -43,10 +46,9 @@ async function fetchWithTimeout(url, options = {}, timeout = 5000, signal) {
     return response;
   } catch (err) {
     cleanup();
-    // Differentiate between abort errors and other errors
     if (err.name === 'AbortError') {
       console.log('Request was aborted');
-      throw err; // Re-throw but don't log as error
+      throw err;
     }
     throw err;
   }
@@ -78,7 +80,7 @@ const api = {
   getStats: (signal) => handleApiRequest('/api/stats', 'GET', null, signal),
   getAccidents: (signal) => handleApiRequest('/api/accidents', 'GET', null, signal),
   getSensorHistory: (signal) => handleApiRequest('/api/sensor/history', 'GET', null, signal),
-  postSensorData: (data, signal) => handleApiRequest('/api/sensor', 'POST', data, signal)
+  postSensorData: (data, signal) => handleApiRequest('/api/sensor', 'POST', data, signal),
 };
 
 export default api;

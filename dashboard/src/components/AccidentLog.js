@@ -1,8 +1,44 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, CircularProgress, Alert, Paper, Chip, IconButton, Tooltip, Stack, Badge } from '@mui/material';
-import { LocationOn, LocalBar, Speed, WifiCalling3, Event, Warning, Dangerous, Security } from '@mui/icons-material';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Alert,
+  Paper,
+  Chip,
+  IconButton,
+  Tooltip,
+  Stack,
+  Badge,
+  TextField,
+  InputAdornment,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  Button,
+  Skeleton,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import {
+  LocationOn,
+  LocalBar,
+  Speed,
+  WifiCalling3,
+  Event,
+  Warning,
+  Dangerous,
+  Security,
+  Search,
+  Download,
+  Refresh,
+} from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api';
+import { sanitizeInput } from '../utils/sanitize';
 
 const severityConfig = {
   high: { label: 'Critical', color: '#f44336', bg: 'rgba(244,67,54,0.08)', icon: Dangerous, pulse: true },
@@ -16,17 +52,40 @@ const getSeverity = (impact) => {
   return severityConfig.low;
 };
 
+const ROWS_PER_PAGE = 10;
+
+function SkeletonAccident() {
+  return (
+    <Paper elevation={0} sx={{ p: 3, borderRadius: 3, mb: 2 }}>
+      <Stack direction="row" spacing={2} alignItems="center">
+        <Skeleton variant="circular" width={48} height={48} />
+        <Box sx={{ flex: 1 }}>
+          <Skeleton variant="text" width="60%" height={24} />
+          <Skeleton variant="text" width="40%" height={16} sx={{ mt: 1 }} />
+        </Box>
+      </Stack>
+    </Paper>
+  );
+}
+
 export default function AccidentLog() {
   const [accidents, setAccidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [severityFilter, setSeverityFilter] = useState('all');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(ROWS_PER_PAGE);
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     console.log('AccidentLog: Fetching accident data...');
     api.getAccidents()
       .then(data => {
         console.log('AccidentLog: Data received:', data);
-        setAccidents(data);
+        const sanitized = sanitizeInput(data);
+        setAccidents(sanitized);
         setLoading(false);
       })
       .catch(err => {
@@ -36,15 +95,87 @@ export default function AccidentLog() {
       });
   }, []);
 
+  const filteredAccidents = useMemo(() => {
+    let result = accidents;
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(a =>
+        String(a.id).toLowerCase().includes(term) ||
+        String(a.impact).toLowerCase().includes(term) ||
+        String(a.alcohol).toLowerCase().includes(term) ||
+        (a.lcd_display && a.lcd_display.toLowerCase().includes(term))
+      );
+    }
+
+    if (severityFilter !== 'all') {
+      result = result.filter(a => {
+        const sev = getSeverity(a.impact);
+        return sev.label.toLowerCase() === severityFilter;
+      });
+    }
+
+    return result;
+  }, [accidents, searchTerm, severityFilter]);
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const handleRefresh = () => {
+    setLoading(true);
+    setError(null);
+    api.getAccidents()
+      .then(data => {
+        const sanitized = sanitizeInput(data);
+        setAccidents(sanitized);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(`Failed to fetch accident log: ${err.message}`);
+        setLoading(false);
+      });
+  };
+
+  const exportToCSV = () => {
+    if (!filteredAccidents.length) return;
+    const headers = ['id', 'timestamp', 'alcohol', 'vibration', 'distance', 'impact', 'lat', 'lng', 'severity'];
+    const csvContent = [
+      headers.join(','),
+      ...filteredAccidents.map(a => [
+        a.id,
+        new Date(a.timestamp).toISOString(),
+        a.alcohol,
+        a.vibration,
+        a.distance,
+        a.impact,
+        a.lat || '',
+        a.lng || '',
+        getSeverity(a.impact).label,
+      ].join(',')),
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `accident_log_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <CircularProgress size={48} thickness={3} />
-      </motion.div>
+    <Box sx={{ p: 3 }}>
+      <Skeleton variant="rectangular" height={40} sx={{ mb: 2, borderRadius: 2 }} />
+      <SkeletonAccident />
+      <SkeletonAccident />
+      <SkeletonAccident />
     </Box>
   );
 
@@ -54,7 +185,10 @@ export default function AccidentLog() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>
+      <Alert severity="error" sx={{ borderRadius: 2, mb: 2 }}>
+        {error}
+        <Button startIcon={<Refresh />} onClick={handleRefresh} sx={{ ml: 2 }}>Retry</Button>
+      </Alert>
     </motion.div>
   );
 
@@ -88,8 +222,50 @@ export default function AccidentLog() {
           </Typography>
         </motion.div>
 
+        <Stack direction="row" spacing={2} sx={{ mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField
+            label="Search accidents"
+            variant="outlined"
+            size="small"
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ maxWidth: 300 }}
+            aria-label="Search accident records"
+          />
+          <Chip
+            label={severityFilter === 'all' ? 'All Severities' : severityFilter}
+            onClick={() => setSeverityFilter(severityFilter === 'all' ? 'low' : severityFilter === 'low' ? 'medium' : severityFilter === 'medium' ? 'high' : 'all')}
+            variant="outlined"
+            size="small"
+            clickable
+            aria-label="Filter by severity"
+          />
+          <Button
+            startIcon={<Download />}
+            onClick={exportToCSV}
+            variant="outlined"
+            size="small"
+            disabled={!filteredAccidents.length}
+            aria-label="Export accident log to CSV"
+          >
+            Export CSV
+          </Button>
+          <Tooltip title="Refresh data">
+            <IconButton onClick={handleRefresh} aria-label="Refresh accident data" size="large">
+              <Refresh />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+
         <AnimatePresence>
-          {accidents.map((accident, index) => {
+          {filteredAccidents.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((accident, index) => {
             const severity = getSeverity(accident.impact);
             const SeverityIcon = severity.icon;
             const factors = [];
@@ -104,6 +280,7 @@ export default function AccidentLog() {
                 key={accident.id}
                 initial={{ opacity: 0, y: 30, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.95 }}
                 transition={{ delay: index * 0.08, type: 'spring', stiffness: 80, damping: 12 }}
               >
                 <Paper
@@ -121,9 +298,10 @@ export default function AccidentLog() {
                       transform: 'translateX(4px)',
                     },
                   }}
+                  role="article"
+                  aria-label={`Accident event ${accident.id}, severity ${severity.label}`}
                 >
                   <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={2}>
-                    {/* Left: Severity + Info */}
                     <Stack direction="row" spacing={2} alignItems="flex-start" sx={{ flex: 1 }}>
                       <Box
                         sx={{
@@ -173,7 +351,9 @@ export default function AccidentLog() {
                                 component="a"
                                 href={`https://www.google.com/maps/search/?api=1&query=${accident.lat},${accident.lng}`}
                                 target="_blank"
+                                rel="noopener noreferrer"
                                 sx={{ p: 0.5 }}
+                                aria-label={`View location on map: ${accident.lat}, ${accident.lng}`}
                               >
                                 <LocationOn fontSize="small" />
                               </IconButton>
@@ -183,7 +363,6 @@ export default function AccidentLog() {
                       </Box>
                     </Stack>
 
-                    {/* Right: Impact + Factors */}
                     <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
                       <Chip
                         icon={<Speed />}
@@ -205,7 +384,6 @@ export default function AccidentLog() {
                     </Stack>
                   </Stack>
 
-                  {/* Details row */}
                   <Stack direction="row" spacing={3} sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <LocalBar fontSize="small" /> Alcohol: {accident.alcohol.toFixed(3)}
@@ -236,6 +414,22 @@ export default function AccidentLog() {
             );
           })}
         </AnimatePresence>
+
+        {filteredAccidents.length > ROWS_PER_PAGE && (
+          <Paper sx={{ borderRadius: 3 }}>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              component="div"
+              count={filteredAccidents.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              labelRowsPerPage="Rows per page:"
+              labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
+            />
+          </Paper>
+        )}
 
         <motion.div
           initial={{ opacity: 0 }}

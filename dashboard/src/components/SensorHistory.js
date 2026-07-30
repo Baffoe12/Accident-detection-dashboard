@@ -1,11 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, CircularProgress, Alert, Paper, Grid, Chip, Stack } from '@mui/material';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Alert,
+  Paper,
+  Grid,
+  Chip,
+  Stack,
+  TextField,
+  InputAdornment,
+  IconButton,
+  Tooltip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  Button,
+  Skeleton,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   AreaChart, Area,
 } from 'recharts';
+import { Search, Download, Refresh } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import api from '../api';
+import { sanitizeInput } from '../utils/sanitize';
 
 const chartColors = {
   alcohol: { line: '#ff9800', fill: 'rgba(255,152,0,0.1)', bg: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)' },
@@ -21,18 +46,44 @@ const sensorMeta = {
   impact: { label: 'Impact', icon: '💥', warning: v => v > 2, unit: 'g', description: 'Spikes indicate sudden acceleration or collisions' },
 };
 
+const ROWS_PER_PAGE = 10;
+
+function SkeletonChart() {
+  return (
+    <Box sx={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <CircularProgress size={32} />
+    </Box>
+  );
+}
+
+function SkeletonTable() {
+  return (
+    <Box sx={{ p: 2 }}>
+      {[...Array(5)].map((_, i) => (
+        <Skeleton key={i} variant="rectangular" height={40} sx={{ mb: 1, borderRadius: 1 }} />
+      ))}
+    </Box>
+  );
+}
+
 export default function SensorHistory() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeSensor, setActiveSensor] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(ROWS_PER_PAGE);
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     console.log('SensorHistory: Fetching sensor history data...');
     api.getSensorHistory()
       .then(rawData => {
         console.log('SensorHistory: Raw data received:', rawData);
-        const formatted = rawData.map(item => ({
+        const sanitized = sanitizeInput(rawData);
+        const formatted = sanitized.map(item => ({
           timestamp: new Date(parseInt(item.timestamp)).toLocaleTimeString(),
           alcohol: item.alcohol,
           vibration: item.vibration,
@@ -49,15 +100,70 @@ export default function SensorHistory() {
       });
   }, []);
 
+  const filteredData = useMemo(() => {
+    if (!searchTerm) return data;
+    const term = searchTerm.toLowerCase();
+    return data.filter(item =>
+      Object.values(item).some(v =>
+        v !== null && v !== undefined && String(v).toLowerCase().includes(term)
+      )
+    );
+  }, [data, searchTerm]);
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const handleRefresh = () => {
+    setLoading(true);
+    setError(null);
+    api.getSensorHistory()
+      .then(rawData => {
+        const sanitized = sanitizeInput(rawData);
+        const formatted = sanitized.map(item => ({
+          timestamp: new Date(parseInt(item.timestamp)).toLocaleTimeString(),
+          alcohol: item.alcohol,
+          vibration: item.vibration,
+          distance: item.distance,
+          impact: item.impact,
+        }));
+        setData(formatted);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  };
+
+  const exportToCSV = () => {
+    if (!filteredData.length) return;
+    const headers = ['timestamp', 'alcohol', 'vibration', 'distance', 'impact'];
+    const csvContent = [
+      headers.join(','),
+      ...filteredData.map(row => headers.map(h => row[h] ?? '').join(',')),
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `sensor_history_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <CircularProgress size={48} thickness={3} />
-      </motion.div>
+    <Box sx={{ p: 3 }}>
+      <Skeleton variant="rectangular" height={40} sx={{ mb: 2, borderRadius: 2 }} />
+      <Skeleton variant="rectangular" height={280} sx={{ mb: 2, borderRadius: 2 }} />
+      <Skeleton variant="rectangular" height={280} sx={{ borderRadius: 2 }} />
     </Box>
   );
 
@@ -67,7 +173,10 @@ export default function SensorHistory() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>
+      <Alert severity="error" sx={{ borderRadius: 2, mb: 2 }}>
+        {error}
+        <Button startIcon={<Refresh />} onClick={handleRefresh} sx={{ ml: 2 }}>Retry</Button>
+      </Alert>
     </motion.div>
   );
 
@@ -101,8 +210,7 @@ export default function SensorHistory() {
           </Typography>
         </motion.div>
 
-        {/* Sensor filter chips */}
-        <Stack direction="row" spacing={1} sx={{ mb: 3, flexWrap: 'wrap' }}>
+        <Stack direction="row" spacing={2} sx={{ mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
           {Object.entries(sensorMeta).map(([key, meta]) => (
             <Chip
               key={key}
@@ -117,8 +225,43 @@ export default function SensorHistory() {
                 '&:hover': { bgcolor: chartColors[key].line, color: 'white' },
                 transition: 'all 0.3s ease',
               }}
+              aria-pressed={activeSensor === key}
             />
           ))}
+        </Stack>
+
+        <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+          <TextField
+            label="Search records"
+            variant="outlined"
+            size="small"
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ maxWidth: 300 }}
+            aria-label="Search sensor history records"
+          />
+          <Button
+            startIcon={<Download />}
+            onClick={exportToCSV}
+            variant="outlined"
+            size="small"
+            disabled={!filteredData.length}
+            aria-label="Export sensor history to CSV"
+          >
+            Export CSV
+          </Button>
+          <Tooltip title="Refresh data">
+            <IconButton onClick={handleRefresh} aria-label="Refresh sensor data" size="large">
+              <Refresh />
+            </IconButton>
+          </Tooltip>
         </Stack>
 
         <Grid container spacing={3}>
@@ -208,6 +351,51 @@ export default function SensorHistory() {
             );
           })}
         </Grid>
+
+        <Paper sx={{ mt: 3, borderRadius: 3 }}>
+          <TableContainer>
+            <Table aria-label="Sensor history data table" size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell><strong>Timestamp</strong></TableCell>
+                  <TableCell><strong>Alcohol</strong></TableCell>
+                  <TableCell><strong>Vibration</strong></TableCell>
+                  <TableCell><strong>Distance (m)</strong></TableCell>
+                  <TableCell><strong>Impact (g)</strong></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredData.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center">
+                      <Typography variant="body2" color="text.secondary">No records match your search</Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+                {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, i) => (
+                  <TableRow key={i} hover>
+                    <TableCell>{row.timestamp}</TableCell>
+                    <TableCell>{row.alcohol}</TableCell>
+                    <TableCell>{row.vibration}</TableCell>
+                    <TableCell>{row.distance}</TableCell>
+                    <TableCell>{row.impact}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            component="div"
+            count={filteredData.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            labelRowsPerPage="Rows per page:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
+          />
+        </Paper>
 
         <motion.div
           initial={{ opacity: 0 }}

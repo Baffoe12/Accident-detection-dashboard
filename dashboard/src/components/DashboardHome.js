@@ -12,9 +12,9 @@ import {
   Paper,
   Stack,
   Typography,
-  alpha,
   useTheme,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
   DirectionsCar,
   ErrorOutline,
