@@ -1,229 +1,188 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Typography, Card, CardContent, Button, Grid, Fade, Paper, Grow, Stack, CircularProgress } from '@mui/material';
-import LiveSensorCard from './LiveSensorCard';
-import StatsCard from './StatsCard';
-import DownloadReportButton from './DownloadReportButton';
-import AccidentImpactTable from './AccidentImpactTable'; // Import the new component
-import ConnectionStatusButton from './ConnectionStatusButton'; // Import the new component
-import RealTimeSensor from './RealTimeSensor';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Divider,
+  Grid,
+  Paper,
+  Stack,
+  Typography
+} from '@mui/material';
+import {
+  DirectionsCar,
+  ErrorOutline,
+  History,
+  LocalBar,
+  LocationOn,
+  Map,
+  MonitorHeart,
+  Refresh,
+  Speed,
+  WarningAmber
+} from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
-function AnimatedStat({ children, delay = 0 }) {
-  return (
-    <Grow in timeout={800} style={{ transitionDelay: `${delay}ms` }}>
-      <Box>{children}</Box>
-    </Grow>
-  );
-}
+const sensorCards = [
+  { key: 'alcohol', label: 'Alcohol level', icon: LocalBar, unit: '', warning: value => value > 0.05 },
+  { key: 'vibration', label: 'Vibration', icon: WarningAmber, unit: '', warning: value => value > 1000 },
+  { key: 'distance', label: 'Distance', icon: DirectionsCar, unit: ' cm', warning: value => value < 20 },
+  { key: 'impact', label: 'Impact force', icon: Speed, unit: ' g', warning: value => value > 2 }
+];
+
+const formatValue = (value, unit) => {
+  if (value === undefined || value === null) return '—';
+  return `${typeof value === 'number' ? value.toFixed(unit === ' g' ? 1 : 0) : value}${unit}`;
+};
 
 export default function DashboardHome() {
-  const [show, setShow] = useState(false);
+  const navigate = useNavigate();
   const [sensorData, setSensorData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [accidents, setAccidents] = useState([]);
   const [error, setError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  const loadDashboard = async () => {
+    try {
+      setError(null);
+      const [sensorResult, accidentResult] = await Promise.allSettled([
+        api.getLatestSensorData(),
+        api.getAccidents()
+      ]);
+
+      if (sensorResult.status === 'rejected') throw sensorResult.reason;
+
+      setSensorData(sensorResult.value);
+      setAccidents(accidentResult.status === 'fulfilled' && Array.isArray(accidentResult.value) ? accidentResult.value : []);
+      setLastUpdated(new Date());
+    } catch (requestError) {
+      setError('Live sensor data is currently unavailable. Check the device or API connection.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setShow(true);
-
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await api.getLatestSensorData();
-        setSensorData(data);
-        setLoading(false);
-      } catch (err) {
-        console.error('Failed to fetch sensor data:', err);
-        setError('Unable to connect to server. Please check your internet connection.');
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-    const interval = setInterval(fetchData, 2000);
+    loadDashboard();
+    const interval = setInterval(loadDashboard, 5000);
     return () => clearInterval(interval);
+  }, []);
 
-  }, [retryCount]);
+  const isWarning = useMemo(() => sensorData && sensorCards.some(card => card.warning(Number(sensorData[card.key]))), [sensorData]);
+  const latestAccident = accidents[0];
+  const hasLocation = Number.isFinite(Number(sensorData?.lat)) && Number.isFinite(Number(sensorData?.lng)) && (Number(sensorData.lat) !== 0 || Number(sensorData.lng) !== 0);
 
   return (
-    <Fade in={show} timeout={700}>
-      <Box sx={{
-        minHeight: '100vh',
-        background: '#fff',
-        py: 8,
-        px: { xs: 3, md: 10 },
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        position: 'relative',
-      }}>
-        {/* Animated Divider Top */}
-        <Box sx={{position:'absolute',top:0,left:0,width:'100%',height:90,overflow:'hidden',zIndex:1}}>
-          <svg viewBox="0 0 1440 90" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%'}}>
-            <path d="M0,50 Q720,140 1440,50 L1440,0 L0,0 Z" fill="#fff" opacity="0.7">
-              <animate attributeName="d" values="M0,50 Q720,140 1440,50 L1440,0 L0,0 Z;M0,35 Q720,100 1440,35 L1440,0 L0,0 Z;M0,50 Q720,140 1440,50 L1440,0 L0,0 Z" dur="8s" repeatCount="indefinite" />
-            </path>
-          </svg>
-        </Box>
-        {/* Homepage topic/title - centered with space above */}
-        <Box sx={{display:'flex', flexDirection:'column', alignItems:'center', mt:6, mb:2}}>
-          <Typography variant="h2" fontWeight="bold" sx={{ letterSpacing: 2, textAlign: 'center', textShadow:'0 4px 16px #2c5364', color: '#1976d2' }}>
-            SafeDrive Public Safety Dashboard
-          </Typography>
-        </Box>
-        {/* Image, Message, and Connection Status Button - responsive layout */}
-        <Box sx={{
-          display:'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems:'center',
-          justifyContent:'center',
-          gap:2,
-          mb:3
-        }}>
-          <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTG2BJIdWAZI4w_mCWYb_HzGCNAgcBlL-Bf9CqaKoSjMgtlqXo&s" alt="Two Cars Crash" style={{height: 200, width: 320, borderRadius: 12, boxShadow:'0 4px 18px #aaa', objectFit: 'cover', maxWidth: '90vw'}} />
-          <Box sx={{
-            display:'flex',
-            flexDirection:'column',
-            height: { xs: 'auto', sm: 200 },
-            justifyContent:'flex-end',
-            alignItems:'flex-end',
-            ml: { xs: 0, sm: 2 },
-            mt: { xs: 2, sm: 0 },
-            width: { xs: '100%', sm: 'auto' }
-          }}>
-            <Box sx={{
-              background:'#000',
-              px:2, py:1, borderRadius:2, width: { xs: '100%', sm: 260 },
-              textAlign:{ xs: 'center', sm: 'right' }, mb:2
-            }}>
-              <Typography sx={{color:'#fff', fontWeight:'bold', fontSize:22, letterSpacing:1.2}}>
-                Life is precious. Drive Safe. Arrive Alive!
-              </Typography>
-            </Box>
-            <Box sx={{alignSelf:{ xs: 'center', sm: 'flex-start' }, mt:'auto'}}>
-              <ConnectionStatusButton />
-            </Box>
+    <Box sx={{ maxWidth: 1280, mx: 'auto', px: { xs: 2, md: 4 }, py: 4 }}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 3, md: 4 },
+          mb: 3,
+          color: 'white',
+          borderRadius: 3,
+          background: 'linear-gradient(120deg, #102a43 0%, #1976d2 100%)'
+        }}
+      >
+        <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'center' }} spacing={2}>
+          <Box>
+            <Typography variant="overline" sx={{ letterSpacing: 1.5, opacity: 0.8 }}>SafeDrive monitoring</Typography>
+            <Typography variant="h3" component="h1" fontWeight={700}>Vehicle overview</Typography>
+            <Typography sx={{ mt: 1, opacity: 0.9 }}>Monitor current conditions and respond quickly to safety alerts.</Typography>
           </Box>
-        </Box>
-        {/* Animated Divider Middle */}
-        <Box sx={{width:'100%',maxWidth:1400,mt:3,mb:6,position:'relative',zIndex:2}}>
-          <svg viewBox="0 0 1440 40" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'40px',display:'block'}}>
-            <path d="M0,30 Q720,80 1440,30" stroke="#1e3c72" strokeWidth="3" fill="none">
-              <animate attributeName="d" values="M0,30 Q720,80 1440,30;M0,15 Q720,40 1440,15;M0,30 Q720,80 1440,30" dur="7s" repeatCount="indefinite" />
-            </path>
-          </svg>
-        </Box>
-        {/* Main live sensor widget */}
-        <Grid container spacing={5} justifyContent="center" alignItems="stretch" sx={{maxWidth: 1400, mb: 3, zIndex:2}}>
-          <Grid item xs={12} md={8}>
-            <AnimatedStat delay={300}>
-              <Card sx={{
-                minHeight: 320,
-                minWidth: 320,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: 5,
-                boxShadow: 12,
-                background: 'linear-gradient(135deg,#232526 0%,#2c5364 100%)',
-                transition: 'transform 0.4s cubic-bezier(.25,1.25,.5,1.1), box-shadow 0.4s',
-                ':hover': {
-                  transform: 'scale(1.11) rotate(-3deg)',
-                  boxShadow: '0 12px 36px #0f2027cc',
-                  background: 'linear-gradient(135deg,#2c5364 0%,#232526 100%)',
-                },
-                m: 'auto',
-                p: 3,
-              }}>
-              
-                <LiveSensorCard />
-              </Card>
-            </AnimatedStat>
-          </Grid>
-        </Grid>
-        {/* Real-time Sensor Data Section */}
-        <Grid container spacing={3} justifyContent="center" sx={{maxWidth: 1400, mb: 4, zIndex:2}}>
-          <Grid item xs={12} md={6}>
-            <Card elevation={3}>
-              <CardContent>
-                <Typography variant="h5" gutterBottom>
-                  Vehicle Status
-                </Typography>
-                {loading ? (
-                  <CircularProgress />
-                ) : sensorData ? (
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography color={sensorData.alcohol > 0.05 ? 'error' : 'textPrimary'}>
-                        Alcohol Level: {sensorData.alcohol}
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Chip
+              icon={error ? <ErrorOutline /> : <MonitorHeart />}
+              label={error ? 'Connection unavailable' : isWarning ? 'Safety warning' : 'System normal'}
+              color={error || isWarning ? 'warning' : 'success'}
+              sx={{ color: 'white', '& .MuiChip-icon': { color: 'white' } }}
+            />
+            <Button color="inherit" startIcon={<Refresh />} onClick={loadDashboard}>Refresh</Button>
+          </Stack>
+        </Stack>
+      </Paper>
+
+      {error && <Alert severity="warning" sx={{ mb: 3 }}>{error}</Alert>}
+
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress /></Box>
+      ) : (
+        <>
+          <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} sx={{ mb: 2 }}>
+            <Typography variant="h5" fontWeight={700}>Live readings</Typography>
+            <Typography variant="body2" color="text.secondary">Updated {lastUpdated ? lastUpdated.toLocaleTimeString() : '—'}</Typography>
+          </Stack>
+
+          <Grid container spacing={2.5}>
+            {sensorCards.map(({ key, label, icon: Icon, unit, warning }) => {
+              const warningState = sensorData && warning(Number(sensorData[key]));
+              return (
+                <Grid item xs={12} sm={6} lg={3} key={key}>
+                  <Card variant="outlined" sx={{ height: '100%', borderColor: warningState ? 'warning.main' : 'divider' }}>
+                    <CardContent>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Typography color="text.secondary">{label}</Typography>
+                        <Icon color={warningState ? 'warning' : 'primary'} />
+                      </Stack>
+                      <Typography variant="h4" fontWeight={700} sx={{ mt: 2 }}>{formatValue(sensorData?.[key], unit)}</Typography>
+                      <Typography variant="body2" color={warningState ? 'warning.dark' : 'success.main'} sx={{ mt: 1 }}>
+                        {warningState ? 'Attention required' : 'Within normal range'}
                       </Typography>
-                    </Grid>
-                    {/* Add more sensor readings */}
-                  </Grid>
-                ) : (
-                  <Typography color="error">No sensor data available</Typography>
-                )}
-              </CardContent>
-            </Card>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
           </Grid>
-        </Grid>
-      {/* StatsCards Section - moved above Accident Impact Table */}
-<Box sx={{width:'100%', maxWidth:900, mb:4, zIndex:2, mx:'auto'}}>
-  <AnimatedStat delay={500}>
-    <StatsCard />  {/* Changed from StatsCards */}
-  </AnimatedStat>
-</Box>
-        {/* Accident Impact Table Section */}
-        <Grid container justifyContent="center" sx={{maxWidth: 1400, mx: 'auto', mb: 4}}>
-          <Grid item xs={12}>
-            <AccidentImpactTable />
+
+          <Grid container spacing={2.5} sx={{ mt: 0.5 }}>
+            <Grid item xs={12} md={6}>
+              <Card variant="outlined" sx={{ height: '100%' }}>
+                <CardContent>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="h6" fontWeight={700}>Current location</Typography>
+                    <LocationOn color="primary" />
+                  </Stack>
+                  <Divider sx={{ my: 2 }} />
+                  {hasLocation ? (
+                    <>
+                      <Typography>{Number(sensorData.lat).toFixed(5)}, {Number(sensorData.lng).toFixed(5)}</Typography>
+                      <Button sx={{ mt: 2 }} startIcon={<Map />} onClick={() => navigate('/map')}>Open map</Button>
+                    </>
+                  ) : (
+                    <Typography color="text.secondary">Waiting for a valid GPS location from the vehicle.</Typography>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Card variant="outlined" sx={{ height: '100%' }}>
+                <CardContent>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="h6" fontWeight={700}>Latest accident event</Typography>
+                    <WarningAmber color={latestAccident ? 'warning' : 'disabled'} />
+                  </Stack>
+                  <Divider sx={{ my: 2 }} />
+                  {latestAccident ? (
+                    <Typography>
+                      Impact: {formatValue(latestAccident.impact, ' g')} · {new Date(latestAccident.timestamp).toLocaleString()}
+                    </Typography>
+                  ) : (
+                    <Typography color="text.secondary">No accident events are available.</Typography>
+                  )}
+                  <Button sx={{ mt: 2 }} startIcon={<History />} onClick={() => navigate('/accidents')}>View accident log</Button>
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
-        </Grid>
-        {/* RealTimeSensor Component */}
-        <Grid container spacing={3} justifyContent="center" sx={{maxWidth: 1400, mb: 4, zIndex:2}}>
-          <Grid item xs={12}>
-            <RealTimeSensor />
-          </Grid>
-        </Grid>
-        {/* Animated Divider Bottom */}
-        <Box sx={{width:'100%',maxWidth:1400,mb:4,position:'relative',zIndex:2}}>
-          <svg viewBox="0 0 1440 40" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'40px',display:'block'}}>
-            <path d="M0,15 Q720,40 1440,15" stroke="#1e3c72" strokeWidth="3" fill="none">
-              <animate attributeName="d" values="M0,15 Q720,40 1440,15;M0,30 Q720,80 1440,30;M0,15 Q720,40 1440,15" dur="7s" repeatCount="indefinite" />
-            </path>
-          </svg>
-        </Box>
-        <Grow in={show} timeout={1200} style={{ transitionDelay: '600ms' }}>
-          <Card sx={{ mt: 6, mb: 3, borderRadius: 5, boxShadow: 14, background: 'linear-gradient(100deg,#232526 0%,#414345 100%)', border: 0, maxWidth: 1400, mx: 'auto', zIndex:2, minHeight: 440, p: 3 }} elevation={14}>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={2}>
-                <img src="https://img.icons8.com/fluency/128/ambulance.png" alt="Rescue" style={{marginRight: 32, filter: 'drop-shadow(0 2px 16px #1e3c72)'}}/>
-                <Typography variant="h3" fontWeight="bold" color="#fff" sx={{ letterSpacing: 1, fontSize: 48 }}>Safe Driving & Rescue Measures</Typography>
-              </Box>
-              <Typography variant="h6" color="#b0bec5" mb={2} sx={{fontSize: 26}}>
-                <i>Empowering you to respond confidently and safely in emergencies.</i>
-              </Typography>
-              <Box component="ol" sx={{pl: 4, mb: 2, fontSize: 26, color: '#fff'}}>
-                <li><b>Stay Calm:</b> Assess the situation and prioritize your safety first.</li>
-                <li><b>Locate the Incident:</b> Use the dashboard map to pinpoint the accident site, view the address, and trace the route.</li>
-                <li><b>Navigate with Confidence:</b> Click <span style={{color:'#90caf9',fontWeight:'bold'}}>Navigate</span> on the map popup for instant GPS directions.</li>
-                <li><b>Alert Authorities:</b> Call emergency services and share the dashboard address for a swift response.</li>
-                <li><b>Provide Aid:</b> Offer first aid only if you are trained. Do not move the injured unless absolutely necessary.</li>
-                <li><b>Share Information:</b> Relay all dashboard data to responders on arrival for better care.</li>
-                <li><b>Drive Responsibly:</b> Obey traffic laws and stay alert when traveling to or from accident scenes.</li>
-              </Box>
-              <Box bgcolor="#232526" p={3} borderRadius={3} boxShadow={3} textAlign="center" mt={3}>
-                <Typography variant="h5" color="#90caf9" fontWeight="bold" sx={{fontSize: 32}}>
-                  SafeDrive Pro: Real-time accident location, live tracking, and emergency alerts—because every second counts.
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grow>
-      </Box>
-    </Fade>
+        </>
+      )}
+    </Box>
   );
 }
