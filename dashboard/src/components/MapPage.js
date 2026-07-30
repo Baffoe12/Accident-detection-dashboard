@@ -127,30 +127,20 @@ function MapPage() {
   useEffect(() => {
     let interval = setInterval(async () => {
       try {
-        const [sensorResult, carResult] = await Promise.allSettled([
-          api.getLatestSensorData(),
-          api.getCarPosition(),
-        ]);
-
-        const carData = carResult.status === 'fulfilled' ? carResult.value : null;
-        const sensorData = sensorResult.status === 'fulfilled' ? sensorResult.value : null;
-
-        const lat = carData?.lat ?? sensorData?.lat;
-        const lng = carData?.lng ?? sensorData?.lng;
-
-        if (lat && lng) {
-          const pos = [lat, lng];
+        const sensorData = await api.getLatestSensorData();
+        if (sensorData?.lat && sensorData?.lng) {
+          const pos = [sensorData.lat, sensorData.lng];
           setCarPos(pos);
           setGpsInfo({
-            lat,
-            lng,
-            speed: carData?.speed ?? sensorData?.speed ?? 0,
-            lcd_display: sensorData?.lcd_display || '',
-            gps_valid: carData?.gps_valid !== false && sensorData?.gps_valid !== false,
+            lat: sensorData.lat,
+            lng: sensorData.lng,
+            speed: sensorData.speed || 0,
+            lcd_display: sensorData.lcd_display || '',
+            gps_valid: sensorData.gps_valid !== false,
           });
           setLastUpdate(new Date());
 
-          if ((carData?.gps_valid !== false || sensorData?.gps_valid !== false) &&
+          if ((sensorData.gps_valid !== false) &&
               (!carPathRef.current.length ||
                carPathRef.current[carPathRef.current.length - 1][0] !== pos[0] ||
                carPathRef.current[carPathRef.current.length - 1][1] !== pos[1])) {

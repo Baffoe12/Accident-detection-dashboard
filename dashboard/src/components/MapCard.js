@@ -45,22 +45,12 @@ export default function MapCard({ compact = false, height = 300 }) {
 
     const fetchPosition = async () => {
       try {
-        const [sensorResult, carResult] = await Promise.allSettled([
-          api.getLatestSensorData(),
-          api.getCarPosition(),
-        ]);
-
-        const sensor = sensorResult.status === 'fulfilled' ? sensorResult.value : null;
-        const car = carResult.status === 'fulfilled' ? carResult.value : null;
-
-        const lat = sensor?.lat ?? car?.lat;
-        const lng = sensor?.lng ?? car?.lng;
-
-        if (lat && lng) {
-          const pos = [lat, lng];
+        const sensorData = await api.getLatestSensorData();
+        if (sensorData?.lat && sensorData?.lng) {
+          const pos = [sensorData.lat, sensorData.lng];
           setPosition(pos);
-          setSensorData(sensor);
-          setGpsValid(sensor?.gps_valid !== false);
+          setSensorData(sensorData);
+          setGpsValid(sensorData.gps_valid !== false);
 
           pathRef.current = [...pathRef.current, pos];
           if (pathRef.current.length > 100) {
@@ -82,9 +72,6 @@ export default function MapCard({ compact = false, height = 300 }) {
   }, []);
 
   useMapCenter(mapRef, position);
-
-  const speed = sensorData?.speed ?? 0;
-  const motorSpeed = sensorData?.motor_speed ?? 0;
 
   return (
     <Fade in timeout={600}>
@@ -158,23 +145,15 @@ export default function MapCard({ compact = false, height = 300 }) {
             {!compact && (
               <Box sx={{ display: 'flex', gap: 2, mt: 1.5, justifyContent: 'center' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <SpeedIcon fontSize="small" color="primary" />
-                  <Typography variant="caption" fontWeight={600}>
-                    {speed} km/h
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <LocationOnIcon fontSize="small" color="primary" />
                   <Typography variant="caption" fontWeight={600}>
                     {position[0].toFixed(4)}, {position[1].toFixed(4)}
                   </Typography>
                 </Box>
-                {motorSpeed > 0 && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Motor: {motorSpeed}%
-                    </Typography>
-                  </Box>
+                {sensorData?.lcd_display && (
+                  <Typography variant="caption" color="text.secondary">
+                    {sensorData.lcd_display}
+                  </Typography>
                 )}
               </Box>
             )}

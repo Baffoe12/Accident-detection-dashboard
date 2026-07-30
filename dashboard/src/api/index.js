@@ -77,7 +77,6 @@ const api = {
   getHealth: (signal) => handleApiRequest('/api/health', 'GET', null, signal),
   getStats: (signal) => handleApiRequest('/api/stats', 'GET', null, signal),
   getAccidents: (signal) => handleApiRequest('/api/accidents', 'GET', null, signal),
-  getCarPosition: (signal) => handleApiRequest('/api/position', 'GET', null, signal), // Changed endpoint
   getSensorHistory: (signal) => handleApiRequest('/api/sensor/history', 'GET', null, signal),
   postSensorData: (data, signal) => handleApiRequest('/api/sensor', 'POST', data, signal)
 };

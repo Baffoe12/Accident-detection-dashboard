@@ -29,10 +29,10 @@ export default function CarTracker() {
 
     const fetchPosition = async () => {
       try {
-        const data = await api.getCarPosition();
-        if (data?.lat && data?.lng) {
+        const sensorData = await api.getLatestSensorData();
+        if (sensorData?.lat && sensorData?.lng) {
           setPositions(prev => {
-            const newPositions = [...prev, [data.lat, data.lng]];
+            const newPositions = [...prev, [sensorData.lat, sensorData.lng]];
             return newPositions.length > 50 ? newPositions.slice(newPositions.length - 50) : newPositions;
           });
           setLoading(false);
