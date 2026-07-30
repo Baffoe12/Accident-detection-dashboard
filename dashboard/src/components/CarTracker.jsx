@@ -3,9 +3,8 @@ import { Paper, Box, Typography, CircularProgress, Fade } from '@mui/material';
 import { MapContainer, TileLayer, Marker, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import api from '../api';
 
-// Fix default icon issue with Leaflet in React
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
@@ -30,13 +29,10 @@ export default function CarTracker() {
 
     const fetchPosition = async () => {
       try {
-        const res = await fetch('/api/car/position');
-        if (!res.ok) throw new Error('Failed to fetch position');
-        const data = await res.json();
-        if (data.lat && data.lng) {
+        const data = await api.getCarPosition();
+        if (data?.lat && data?.lng) {
           setPositions(prev => {
             const newPositions = [...prev, [data.lat, data.lng]];
-            // Keep only last 50 positions to limit memory
             return newPositions.length > 50 ? newPositions.slice(newPositions.length - 50) : newPositions;
           });
           setLoading(false);
@@ -48,7 +44,7 @@ export default function CarTracker() {
     };
 
     fetchPosition();
-    intervalId = setInterval(fetchPosition, 3000); // fetch every 3 seconds
+    intervalId = setInterval(fetchPosition, 3000);
 
     return () => clearInterval(intervalId);
   }, []);

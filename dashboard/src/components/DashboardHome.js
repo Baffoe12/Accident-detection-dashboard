@@ -21,18 +21,21 @@ import {
   LocationOn,
   Map,
   MonitorHeart,
+  NetworkCheck,
   Refresh,
   Speed,
   WarningAmber
 } from '@mui/icons-material';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import MapCard from './MapCard';
 
 const sensorCards = [
-  { key: 'alcohol', label: 'Alcohol level', icon: LocalBar, unit: '', warning: value => value > 0.05 },
-  { key: 'vibration', label: 'Vibration', icon: WarningAmber, unit: '', warning: value => value > 1000 },
-  { key: 'distance', label: 'Distance', icon: DirectionsCar, unit: ' cm', warning: value => value < 20 },
-  { key: 'impact', label: 'Impact force', icon: Speed, unit: ' g', warning: value => value > 2 }
+  { key: 'alcohol', label: 'Alcohol level', icon: LocalBar, unit: '', detail: 'Driver safety sensor', warning: value => value > 0.05 },
+  { key: 'vibration', label: 'Vibration', icon: WarningAmber, unit: '', detail: 'Road and impact activity', warning: value => value > 1000 },
+  { key: 'distance', label: 'Distance', icon: DirectionsCar, unit: ' cm', detail: 'Nearest detected object', warning: value => value < 20 },
+  { key: 'impact', label: 'Impact force', icon: Speed, unit: ' g', detail: 'Acceleration force', warning: value => value > 2 }
 ];
 
 const formatValue = (value, unit) => {
@@ -87,7 +90,24 @@ export default function DashboardHome() {
           mb: 3,
           color: 'white',
           borderRadius: 3,
-          background: 'linear-gradient(120deg, #102a43 0%, #1976d2 100%)'
+          overflow: 'hidden',
+          position: 'relative',
+          isolation: 'isolate',
+          background: 'linear-gradient(120deg, #102a43 0%, #1976d2 100%)',
+          '&::before, &::after': {
+            content: '""',
+            position: 'absolute',
+            borderRadius: '50%',
+            zIndex: -1,
+            opacity: 0.28,
+            animation: 'float 8s ease-in-out infinite'
+          },
+          '&::before': { width: 260, height: 260, right: -70, top: -110, background: '#7dd3fc' },
+          '&::after': { width: 180, height: 180, right: 180, bottom: -130, background: '#a5b4fc', animationDelay: '-4s' },
+          '@keyframes float': {
+            '0%, 100%': { transform: 'translate3d(0, 0, 0) rotate(0deg)' },
+            '50%': { transform: 'translate3d(-18px, 16px, 0) rotate(12deg)' }
+          }
         }}
       >
         <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'center' }} spacing={2}>
@@ -101,7 +121,12 @@ export default function DashboardHome() {
               icon={error ? <ErrorOutline /> : <MonitorHeart />}
               label={error ? 'Connection unavailable' : isWarning ? 'Safety warning' : 'System normal'}
               color={error || isWarning ? 'warning' : 'success'}
-              sx={{ color: 'white', '& .MuiChip-icon': { color: 'white' } }}
+              sx={{
+                color: 'white',
+                '& .MuiChip-icon': { color: 'white' },
+                animation: error || isWarning ? 'statusPulse 1.5s ease-in-out infinite' : 'none',
+                '@keyframes statusPulse': { '50%': { transform: 'scale(1.05)', boxShadow: '0 0 0 8px rgba(255, 183, 77, 0.18)' } }
+              }}
             />
             <Button color="inherit" startIcon={<Refresh />} onClick={loadDashboard}>Refresh</Button>
           </Stack>
@@ -116,15 +141,25 @@ export default function DashboardHome() {
         <>
           <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} sx={{ mb: 2 }}>
             <Typography variant="h5" fontWeight={700}>Live readings</Typography>
-            <Typography variant="body2" color="text.secondary">Updated {lastUpdated ? lastUpdated.toLocaleTimeString() : '—'}</Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <NetworkCheck color={error ? 'warning' : 'success'} fontSize="small" />
+              <Typography variant="body2" color="text.secondary">Updated {lastUpdated ? lastUpdated.toLocaleTimeString() : '—'}</Typography>
+            </Stack>
           </Stack>
 
           <Grid container spacing={2.5}>
-            {sensorCards.map(({ key, label, icon: Icon, unit, warning }) => {
+            {sensorCards.map(({ key, label, icon: Icon, unit, detail, warning }, index) => {
               const warningState = sensorData && warning(Number(sensorData[key]));
               return (
                 <Grid item xs={12} sm={6} lg={3} key={key}>
-                  <Card variant="outlined" sx={{ height: '100%', borderColor: warningState ? 'warning.main' : 'divider' }}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.08, duration: 0.35 }}
+                    whileHover={{ y: -8, rotateX: 3, rotateY: -2, scale: 1.02 }}
+                    style={{ height: '100%', perspective: 900 }}
+                  >
+                  <Card variant="outlined" sx={{ height: '100%', borderColor: warningState ? 'warning.main' : 'divider', transition: 'box-shadow 200ms ease', '&:hover': { boxShadow: 8 } }}>
                     <CardContent>
                       <Stack direction="row" justifyContent="space-between" alignItems="center">
                         <Typography color="text.secondary">{label}</Typography>
@@ -134,8 +169,10 @@ export default function DashboardHome() {
                       <Typography variant="body2" color={warningState ? 'warning.dark' : 'success.main'} sx={{ mt: 1 }}>
                         {warningState ? 'Attention required' : 'Within normal range'}
                       </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>{detail}</Typography>
                     </CardContent>
                   </Card>
+                  </motion.div>
                 </Grid>
               );
             })}
@@ -146,14 +183,14 @@ export default function DashboardHome() {
               <Card variant="outlined" sx={{ height: '100%' }}>
                 <CardContent>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Typography variant="h6" fontWeight={700}>Current location</Typography>
+                    <Typography variant="h6" fontWeight={700}>Live Map</Typography>
                     <LocationOn color="primary" />
                   </Stack>
                   <Divider sx={{ my: 2 }} />
                   {hasLocation ? (
                     <>
-                      <Typography>{Number(sensorData.lat).toFixed(5)}, {Number(sensorData.lng).toFixed(5)}</Typography>
-                      <Button sx={{ mt: 2 }} startIcon={<Map />} onClick={() => navigate('/map')}>Open map</Button>
+                      <MapCard compact height={220} />
+                      <Button sx={{ mt: 2 }} startIcon={<Map />} onClick={() => navigate('/map')}>Open full map</Button>
                     </>
                   ) : (
                     <Typography color="text.secondary">Waiting for a valid GPS location from the vehicle.</Typography>
@@ -181,6 +218,23 @@ export default function DashboardHome() {
               </Card>
             </Grid>
           </Grid>
+
+          <Paper variant="outlined" sx={{ mt: 2.5, p: 2, borderRadius: 2, bgcolor: 'grey.50' }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} divider={<Divider orientation="vertical" flexItem />}>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="caption" color="text.secondary">DEVICE</Typography>
+                <Typography fontWeight={600}>{sensorData?.device_id || 'SafeDrive vehicle unit'}</Typography>
+              </Box>
+              <Box sx={{ flex: 2 }}>
+                <Typography variant="caption" color="text.secondary">VEHICLE DISPLAY</Typography>
+                <Typography fontWeight={600}>{sensorData?.lcd_display || 'No display status received'}</Typography>
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="caption" color="text.secondary">ACCIDENT EVENTS</Typography>
+                <Typography fontWeight={600}>{accidents.length} recorded</Typography>
+              </Box>
+            </Stack>
+          </Paper>
         </>
       )}
     </Box>
