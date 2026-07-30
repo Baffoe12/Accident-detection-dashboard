@@ -127,7 +127,7 @@ export default function LoginPage() {
 
             <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
               <Typography variant="body2">
-           redentials: <strong>Your Safety is in your Hands</strong> / <strong> </strong>
+           <strong>Drive Safe </strong>  <strong>Your Safety is in your Hands </strong>
               </Typography>
             </Alert>
           </CardContent>
