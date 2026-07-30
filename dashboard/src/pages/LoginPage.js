@@ -127,7 +127,7 @@ export default function LoginPage() {
 
             <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
               <Typography variant="body2">
-                Demo credentials: <strong>admin</strong> / <strong>safedrive2024</strong>
+           redentials: <strong>Your Safety is in your Hands</strong> / <strong> </strong>
               </Typography>
             </Alert>
           </CardContent>

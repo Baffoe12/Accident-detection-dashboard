@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs, Tab, Box } from '@mui/material';
-import { Home, Map, BarChart, History, Download, Warning } from '@mui/icons-material';
+import { Home, Map, BarChart, History, Download, Warning, AccountCircle } from '@mui/icons-material';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 export default function DashboardLayout() {
   const location = useLocation();
@@ -14,6 +14,7 @@ export default function DashboardLayout() {
     '/history': 3,
     '/accidents': 4,
     '/download': 5,
+    '/profile': 6,
   };
 
   // Map index to path for navigation
@@ -24,6 +25,7 @@ export default function DashboardLayout() {
     3: '/history',
     4: '/accidents',
     5: '/download',
+    6: '/profile',
   };
 
   const currentTab = pathToIndex[location.pathname] ?? 0;
@@ -50,7 +52,8 @@ export default function DashboardLayout() {
         <Tab icon={<BarChart />} label="Stats" sx={{ minWidth: 100, px: 2, mr: 2, transition: 'color 0.3s ease', color: 'white' }} />
         <Tab icon={<History />} label="Sensor History" sx={{ minWidth: 100, px: 2, mr: 2, transition: 'color 0.3s ease', color: 'white' }} />
         <Tab icon={<Warning />} label="Accident Log" sx={{ minWidth: 100, px: 2, mr: 2, transition: 'color 0.3s ease', color: 'white' }} />
-        <Tab icon={<Download />} label="Download" sx={{ minWidth: 100, px: 2, transition: 'color 0.3s ease', color: 'white' }} />
+        <Tab icon={<Download />} label="Download" sx={{ minWidth: 100, px: 2, mr: 2, transition: 'color 0.3s ease', color: 'white' }} />
+        <Tab icon={<AccountCircle />} label="Profile" sx={{ minWidth: 100, px: 2, transition: 'color 0.3s ease', color: 'white' }} />
       </Tabs>
       <Outlet />
     </Box>
