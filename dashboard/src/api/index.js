@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:4000' : 'https://accident-detection-85af.onrender.com');
 
 async function fetchWithTimeout(url, options = {}, timeout = 5000, signal) {
   const controller = new AbortController();
