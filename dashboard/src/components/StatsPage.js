@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Typography, CircularProgress, Alert, Paper, Grid, alpha } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, Paper, Grid, alpha, Stack } from '@mui/material';
 import { motion } from 'framer-motion';
 import {
   TrendingUp,
