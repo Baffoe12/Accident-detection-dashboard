@@ -24,7 +24,7 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
   AreaChart, Area,
 } from 'recharts';
 import { Search, Download, Refresh } from '@mui/icons-material';
@@ -321,7 +321,7 @@ export default function SensorHistory() {
                           <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                           <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
                           <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                          <Tooltip
+                          <RechartsTooltip
                             contentStyle={{
                               borderRadius: 12,
                               border: `1px solid ${alpha(colors.line, 0.2)}`,
