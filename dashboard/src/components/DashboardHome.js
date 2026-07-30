@@ -3,7 +3,6 @@ import { Box, Typography, Card, CardContent, Button, Grid, Fade, Paper, Grow, St
 import LiveSensorCard from './LiveSensorCard';
 import StatsCard from './StatsCard';
 import DownloadReportButton from './DownloadReportButton';
-import HeartRateCard from './HeartRateCard';
 import AccidentImpactTable from './AccidentImpactTable'; // Import the new component
 import ConnectionStatusButton from './ConnectionStatusButton'; // Import the new component
 import RealTimeSensor from './RealTimeSensor';
@@ -116,7 +115,7 @@ export default function DashboardHome() {
             </path>
           </svg>
         </Box>
-        {/* Main sensor widgets row with LiveSensorCard between CarTracker and HeartPulse */}
+        {/* Main live sensor widget */}
         <Grid container spacing={5} justifyContent="center" alignItems="stretch" sx={{maxWidth: 1400, mb: 3, zIndex:2}}>
           <Grid item xs={12} md={8}>
             <AnimatedStat delay={300}>
@@ -141,31 +140,6 @@ export default function DashboardHome() {
               }}>
               
                 <LiveSensorCard />
-              </Card>
-            </AnimatedStat>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <AnimatedStat delay={400}>
-              <Card sx={{
-                minHeight: 320,
-                minWidth: 320,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: 5,
-                boxShadow: 12,
-                background: 'linear-gradient(135deg,#232526 0%,#2c5364 100%)',
-                transition: 'transform 0.4s cubic-bezier(.25,1.25,.5,1.1), box-shadow 0.4s',
-                ':hover': {
-                  transform: 'scale(1.11) rotate(3deg)',
-                  boxShadow: '0 12px 36px #0f2027cc',
-                  background: 'linear-gradient(135deg,#2c5364 0%,#232526 100%)',
-                },
-                m: 'auto',
-                p: 3,
-              }}>
-                <HeartRateCard />
               </Card>
             </AnimatedStat>
           </Grid>

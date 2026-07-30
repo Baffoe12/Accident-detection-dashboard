@@ -28,7 +28,6 @@ export default function ApiTest() {
           <Typography>Alcohol: {sensorData.alcohol}</Typography>
           <Typography>Distance: {sensorData.distance}</Typography>
           <Typography>Impact: {sensorData.impact}</Typography>
-          <Typography>Seatbelt: {sensorData.seatbelt ? 'Yes' : 'No'}</Typography>
         </Box>
       )}
     </Paper>

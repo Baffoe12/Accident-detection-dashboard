@@ -36,7 +36,6 @@ export default function SensorTest() {
           <Typography>Alcohol: {sensorData.alcohol}</Typography>
           <Typography>Vibration: {sensorData.vibration}</Typography>
           <Typography>Distance: {sensorData.distance}</Typography>
-          <Typography>Seatbelt: {sensorData.seatbelt ? 'Fastened' : 'Unfastened'}</Typography>
           <Typography>Impact: {sensorData.impact}</Typography>
           <Typography>LCD Display: {sensorData.lcd_display}</Typography>
         </Box>

@@ -15,7 +15,7 @@ export default function SensorHistory() {
       .then(data => {
         console.log('SensorHistory: Raw data received:', data);
         
-        // Create history points from pulse_data array
+        // Normalize the history readings returned by the API.
         const formattedData = data.map(item => {
           // Create data point for current reading
           const currentPoint = {
@@ -23,9 +23,7 @@ export default function SensorHistory() {
             alcohol: item.alcohol,
             vibration: item.vibration,
             distance: item.distance,
-            impact: item.impact,
-            seatbelt: item.seatbelt,
-            heart_rate: item.heart_rate // Use heart_rate field instead of pulse
+            impact: item.impact
           };
           
           console.log('Formatted point:', currentPoint);
@@ -79,9 +77,7 @@ export default function SensorHistory() {
     alcohol: '#ff9800',  // Orange for alcohol readings
     vibration: '#f44336', // Red for vibration (potential accidents)
     distance: '#2196f3',  // Blue for distance readings
-    impact: '#e91e63',    // Pink for impact readings
-    seatbelt: '#4caf50',  // Green for seatbelt status
-    heart_rate: '#9c27b0'      // Purple for heart rate
+    impact: '#e91e63'    // Pink for impact readings
   };
 
   // Define sensor descriptions
@@ -89,17 +85,10 @@ export default function SensorHistory() {
     alcohol: 'Alcohol sensor readings (higher values indicate potential intoxication)',
     vibration: 'Vibration sensor readings (spikes indicate potential accidents)',
     distance: 'Ultrasonic distance sensor readings (lower values indicate closer objects)',
-    impact: 'MPU6050 impact/acceleration readings (spikes indicate potential accidents)',
-    seatbelt: 'Seatbelt sensor status (1 = buckled, 0 = unbuckled)',
-    heart_rate: 'Heart rate readings in BPM (beats per minute)'
+    impact: 'MPU6050 impact/acceleration readings (spikes indicate potential accidents)'
   };
 
-  // Add heart_rate-specific formatter
-  const formatSensorValue = (value, sensor) => {
-    if (sensor === 'heart_rate') return `${value} BPM`;
-    if (sensor === 'seatbelt') return value === 1 ? 'Buckled' : 'Unbuckled';
-    return value;
-  };
+  const formatSensorValue = value => value;
 
   return (
     <motion.div
@@ -178,7 +167,7 @@ export default function SensorHistory() {
                         />
                         <YAxis 
                           tick={{ fontSize: 12 }} 
-                          label={{ value: sensor === 'seatbelt' ? 'Status' : 'Value', angle: -90, position: 'insideLeft' }} 
+                          label={{ value: 'Value', angle: -90, position: 'insideLeft' }}
                         />
                         <Tooltip 
                           formatter={(value) => [formatSensorValue(value, sensor), sensor]}
@@ -189,9 +178,9 @@ export default function SensorHistory() {
                           type="monotone"
                           dataKey={sensor}
                           stroke={chartColors[sensor]}
-                          strokeWidth={sensor === 'heart_rate' ? 3 : 2}
-                          dot={{ r: sensor === 'heart_rate' ? 4 : 2 }}
-                          activeDot={{ r: sensor === 'heart_rate' ? 6 : 4 }}
+                          strokeWidth={2}
+                          dot={{ r: 2 }}
+                          activeDot={{ r: 4 }}
                           isAnimationActive={true}
                         />
                       </LineChart>

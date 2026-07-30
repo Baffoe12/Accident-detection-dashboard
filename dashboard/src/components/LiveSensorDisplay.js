@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Paper, Typography, Chip, Grid } from '@mui/material';
-import { LocalBar, Vibration, Speed, AirlineSeatReclineNormal } from '@mui/icons-material';
+import { LocalBar, Vibration, Speed } from '@mui/icons-material';
 import api from '../api';
 
 export default function LiveSensorDisplay() {
@@ -23,7 +23,7 @@ export default function LiveSensorDisplay() {
 
   if (!data) return null;
 
-  const dangerousCondition = data.alcohol > 0.05 || data.distance < 20 || data.vibration > 1.0 || !data.seatbelt;
+  const dangerousCondition = data.alcohol > 0.05 || data.distance < 20 || data.vibration > 1.0;
 
   return (
     <Paper sx={{ p: 2, m: 2 }}>
@@ -79,21 +79,6 @@ export default function LiveSensorDisplay() {
                 {data.vibration > 1.0 && (
                   <Chip size="small" color="warning" label="High" />
                 )}
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper elevation={3} sx={{ p: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <AirlineSeatReclineNormal color={data.seatbelt ? 'success' : 'error'} />
-              <Box>
-                <Typography variant="body2" color="text.secondary">Seatbelt</Typography>
-                <Chip 
-                  label={data.seatbelt ? 'BUCKLED' : 'UNBUCKLED'}
-                  color={data.seatbelt ? 'success' : 'error'}
-                  variant="outlined"
-                />
               </Box>
             </Box>
           </Paper>

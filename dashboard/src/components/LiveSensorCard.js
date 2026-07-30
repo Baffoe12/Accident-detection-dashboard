@@ -265,13 +265,6 @@ export default function LiveSensorCard() {
               </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Chip 
-                  label={`Seatbelt: ${data.seatbelt ? 'On' : 'Off'}`} 
-                  color={data.seatbelt ? 'success':'error'} 
-                  sx={{ fontWeight: 'bold' }}
-                />
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Chip 
                   label={`Impact: ${data.impact}`} 
                   color={statusColor(data.impact, 'impact')} 
                   sx={{ fontWeight: 'bold' }}
@@ -279,13 +272,6 @@ export default function LiveSensorCard() {
               </motion.div>
             </Stack>
             <Stack direction="row" gap={1} flexWrap="wrap">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Chip 
-                  label={`Seatbelt: ${data.seatbelt ? "Fastened" : "Unfastened"}`} 
-                  color={data.seatbelt ? "success" : "error"}
-                  sx={{ fontWeight: 'bold' }}
-                />
-              </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Chip 
                   label={`Impact: ${data.impact}`} 

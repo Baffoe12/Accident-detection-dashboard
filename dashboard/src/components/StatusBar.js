@@ -6,8 +6,7 @@ export default function StatusBar({ sensorData }) {
   const isDangerous = sensorData && (
     sensorData.alcohol > 0.05 ||
     sensorData.impact > 2.0 ||
-    sensorData.distance < 20 ||
-    !sensorData.seatbelt
+    sensorData.distance < 20
   );
 
   return (

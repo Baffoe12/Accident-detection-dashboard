@@ -109,14 +109,6 @@ export default function StatsPage() {
               </Typography>
             </motion.div>
             
-            <motion.div variants={itemVariants}>
-              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Box component="span" sx={{ fontWeight: 'bold', mr: 1 }}>Seatbelt Violations:</Box>
-                <Box component="span" sx={{ fontSize: '1.2rem', color: '#e53935', fontWeight: 'bold' }}>
-                  {stats.seatbelt_violations}
-                </Box>
-              </Typography>
-            </motion.div>
             
             <motion.div variants={itemVariants}>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>

@@ -6,14 +6,13 @@ function downloadReport() {
   fetch('/api/accidents')
     .then(res => res.json())
     .then(data => {
-      const csvHeader = 'ID,Timestamp,Alcohol,Vibration,Distance,Seatbelt,Impact,Lat,Lng\n';
+      const csvHeader = 'ID,Timestamp,Alcohol,Vibration,Distance,Impact,Lat,Lng\n';
       const csvRows = data.map(row => [
         row.id,
         row.timestamp ? new Date(row.timestamp).toLocaleString() : '',
         row.alcohol,
         row.vibration,
         row.distance,
-        row.seatbelt ? 'Yes' : 'No',
         row.impact,
         row.lat,
         row.lng

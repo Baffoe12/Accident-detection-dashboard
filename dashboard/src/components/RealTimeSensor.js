@@ -47,10 +47,9 @@ export default function RealTimeSensor() {
   }, []);
 
   const isDangerous = (data) => {
-    return data.alcohol > 0.05 || 
-           data.impact > 2.0 || 
-           data.distance < 20 || 
-           !data.seatbelt;
+    return data.alcohol > 0.05 ||
+           data.impact > 2.0 ||
+           data.distance < 20;
   };
 
   return (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, CircularProgress, Alert, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Tooltip } from '@mui/material';
-import { LocationOn, LocalBar, AirlineSeatReclineNormal, Speed, WifiCalling3 } from '@mui/icons-material';
+import { LocationOn, LocalBar, Speed, WifiCalling3 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api';
 
@@ -138,13 +138,6 @@ export default function AccidentLog() {
                                   </IconButton>
                                 </Tooltip>
                               )}
-                              {accident.seatbelt === 0 && (
-                                <Tooltip title="Seatbelt not worn">
-                                  <IconButton size="small" color="error">
-                                    <AirlineSeatReclineNormal />
-                                  </IconButton>
-                                </Tooltip>
-                              )}
                               {accident.impact > 5 && (
                                 <Tooltip title={`Impact: ${accident.impact.toFixed(1)}`}>
                                   <IconButton size="small" color="error">
@@ -192,7 +185,6 @@ export default function AccidentLog() {
                               {accident.distance < 10 && 'Proximity warning. '}
                               {accident.alcohol > 0.05 && 'Alcohol detected. '}
                               {accident.impact > 8 && 'Severe impact detected. '}
-                              {accident.seatbelt === 0 && 'Seatbelt not worn. '}
                               {accident.lcd_display && `LCD: "${accident.lcd_display}"`}
                             </Typography>
                           </TableCell>
