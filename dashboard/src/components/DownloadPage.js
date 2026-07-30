@@ -16,6 +16,7 @@ import {
   CircularProgress,
   Paper,
   Stack,
+  alpha,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
