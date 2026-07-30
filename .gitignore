@@ -1,0 +1,23 @@
+# Node modules
+node_modules/
+node_modules/.cache/
+.vercel
+
+# React build artifacts
+build/
+dashboard/build/
+
+# Env files
+.env
+.env.*
+
+# Logs
+ngrok.log
+
+# Local DB files
+*.sqlite
+*.sqlite3
+
+# Misc
+.DS_Store
+
