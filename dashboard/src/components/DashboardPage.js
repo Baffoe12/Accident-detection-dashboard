@@ -11,8 +11,8 @@ function DashboardPage() {
     '/': 0,
     '/map': 1,
     '/stats': 2,
-    '/sensor-history': 3,
-    '/accident-history': 4,
+    '/history': 3,
+    '/accidents': 4,
     '/download': 5,
   };
 
@@ -21,8 +21,8 @@ function DashboardPage() {
     0: '/',
     1: '/map',
     2: '/stats',
-    3: '/sensor-history',
-    4: '/accident-history',
+    3: '/history',
+    4: '/accidents',
     5: '/download',
   };
 
