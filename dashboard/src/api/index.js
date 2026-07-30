@@ -60,7 +60,7 @@ async function handleApiRequest(endpoint, method = 'GET', data = null, signal) {
         method,
         body: data ? JSON.stringify(data) : undefined,
       },
-      5000,
+      10000,
       signal
     );
     return await response.json();

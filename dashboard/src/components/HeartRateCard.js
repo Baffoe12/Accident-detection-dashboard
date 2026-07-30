@@ -11,7 +11,12 @@ const HeartRateCard = () => {
   const abortControllerRef = useRef(null);
 
   useEffect(() => {
+    let isFetching = false;
+
     const fetchHeartRate = async () => {
+      if (isFetching) return;
+      isFetching = true;
+
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -35,11 +40,12 @@ const HeartRateCard = () => {
         }
       } finally {
         setLoading(false);
+        isFetching = false;
       }
     };
 
-    // Poll heart rate data every second
-    const interval = setInterval(fetchHeartRate, 1000);
+    // Poll heart rate data every 2 seconds
+    const interval = setInterval(fetchHeartRate, 2000);
     fetchHeartRate(); // Initial fetch
 
     return () => {

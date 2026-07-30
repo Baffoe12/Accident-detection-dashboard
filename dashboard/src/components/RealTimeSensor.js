@@ -9,7 +9,12 @@ export default function RealTimeSensor() {
   const abortControllerRef = useRef(null);
 
   useEffect(() => {
+    let isFetching = false;
+
     const fetchData = async () => {
+      if (isFetching) return;
+      isFetching = true;
+
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -26,6 +31,8 @@ export default function RealTimeSensor() {
         } else {
           console.log('Fetch aborted');
         }
+      } finally {
+        isFetching = false;
       }
     };
 

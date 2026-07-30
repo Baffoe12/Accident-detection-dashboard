@@ -96,7 +96,12 @@ export default function LiveSensorCard() {
   };
 
   useEffect(() => {
+    let isFetching = false;
+
     const fetchData = async () => {
+      if (isFetching) return;
+      isFetching = true;
+
       try {
         const sensorData = await fetchWithRetry();
         setData(sensorData);
@@ -115,6 +120,8 @@ export default function LiveSensorCard() {
           console.error('Failed to load sensor data:', err);
           setError('Failed to load sensor data');
         }
+      } finally {
+        isFetching = false;
       }
     };
 
