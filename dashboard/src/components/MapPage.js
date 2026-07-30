@@ -48,13 +48,13 @@ function CarMarker({ position, sensorData }) {
   return (
     <Marker position={position} icon={carIcon}>
       <Popup>
-        <Box sx={{ fontFamily: 'Arial', fontSize: '14px', minWidth: '200px' }}>
+        <Box sx={{ fontFamily: 'Arial', fontSize: '14px', minWidth: '220px' }}>
           <Typography variant="subtitle1" fontWeight="bold" color="primary">
-            Live Vehicle Status
+            Live Vehicle Tracking
           </Typography>
           <Box sx={{ mt: 1 }}>
             <Typography variant="body2" gutterBottom>
-              <strong>GPS Coordinates:</strong>
+              <strong>Position:</strong>
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Lat: {sensorData?.lat?.toFixed(6) || position[0].toFixed(6)}
@@ -67,6 +67,9 @@ function CarMarker({ position, sensorData }) {
             </Typography>
             <Typography variant="body2">
               <strong>LCD Display:</strong> {sensorData?.lcd_display || 'No data'}
+            </Typography>
+            <Typography variant="body2">
+              <strong>GPS Status:</strong> {sensorData?.gps_valid !== false ? 'Valid' : 'Invalid'}
             </Typography>
           </Box>
         </Box>
@@ -124,28 +127,39 @@ function MapPage() {
   useEffect(() => {
     let interval = setInterval(async () => {
       try {
-        const sensorData = await api.getLatestSensorData();
-        if (sensorData?.lat && sensorData?.lng) {
-          const pos = [sensorData.lat, sensorData.lng];
+        const [sensorResult, carResult] = await Promise.allSettled([
+          api.getLatestSensorData(),
+          api.getCarPosition(),
+        ]);
+
+        const carData = carResult.status === 'fulfilled' ? carResult.value : null;
+        const sensorData = sensorResult.status === 'fulfilled' ? sensorResult.value : null;
+
+        const lat = carData?.lat ?? sensorData?.lat;
+        const lng = carData?.lng ?? sensorData?.lng;
+
+        if (lat && lng) {
+          const pos = [lat, lng];
           setCarPos(pos);
           setGpsInfo({
-            lat: sensorData.lat,
-            lng: sensorData.lng,
-            speed: sensorData.speed || 0,
-            lcd_display: sensorData.lcd_display || '',
-            gps_valid: sensorData.gps_valid !== false,
+            lat,
+            lng,
+            speed: carData?.speed ?? sensorData?.speed ?? 0,
+            lcd_display: sensorData?.lcd_display || '',
+            gps_valid: carData?.gps_valid !== false && sensorData?.gps_valid !== false,
           });
           setLastUpdate(new Date());
 
-          if (sensorData.gps_valid && (!carPathRef.current.length ||
-              carPathRef.current[carPathRef.current.length - 1][0] !== pos[0] ||
-              carPathRef.current[carPathRef.current.length - 1][1] !== pos[1])) {
+          if ((carData?.gps_valid !== false || sensorData?.gps_valid !== false) &&
+              (!carPathRef.current.length ||
+               carPathRef.current[carPathRef.current.length - 1][0] !== pos[0] ||
+               carPathRef.current[carPathRef.current.length - 1][1] !== pos[1])) {
             carPathRef.current = [...carPathRef.current, pos];
             setCarPath([...carPathRef.current]);
           }
         }
       } catch (err) {
-        console.error('Failed to fetch GPS data:', err);
+        console.error('Failed to fetch car position:', err);
       }
     }, 2000);
     return () => clearInterval(interval);
@@ -238,12 +252,12 @@ function MapPage() {
           transition={{ type: 'spring', stiffness: 100, delay: 0.2 }}
         >
           <Typography variant="h5" mb={2}>
-            Vehicle Status
+            Car Tracking
             <Box component="span" sx={{ ml: 2, fontSize: '1rem', color: gpsInfo.gps_valid ? 'success.main' : 'error.main' }}>
-              GPS: {gpsInfo.lat.toFixed(6)}, {gpsInfo.lng.toFixed(6)} |
+              {gpsInfo.gps_valid ? '● Live' : '● No Signal'} |
+              Lat: {gpsInfo.lat.toFixed(6)}, Lng: {gpsInfo.lng.toFixed(6)} |
               Speed: {gpsInfo.speed} km/h |
               LCD: {gpsInfo.lcd_display || 'No data'}
-              {!gpsInfo.gps_valid && " (Waiting for signal...)"}
             </Box>
           </Typography>
         </motion.div>
