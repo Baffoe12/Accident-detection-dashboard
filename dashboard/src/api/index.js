@@ -4,6 +4,8 @@ export const API_BASE_URL =
     ? 'http://localhost:4000'
     : 'https://accident-detection-85af.onrender.com');
 
+const API_KEY = process.env.REACT_APP_API_KEY || 'safedrive_secret_key';
+
 async function fetchWithTimeout(url, options = {}, timeout = 5000, signal) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -33,6 +35,7 @@ async function fetchWithTimeout(url, options = {}, timeout = 5000, signal) {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        'X-API-Key': API_KEY,
         ...options.headers,
       },
       signal: controller.signal,
