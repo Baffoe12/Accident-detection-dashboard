@@ -14,7 +14,6 @@ import DashboardLayout from './components/DashboardLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
-import SettingsPage from './pages/SettingsPage';
 import { AuthProvider } from './context/AuthContext';
 import theme from './theme';
 import api from './api';
@@ -66,7 +65,6 @@ function App() {
                             <Route path="/stats" element={<StatsPage />} />
                             <Route path="/download" element={<DownloadPage />} />
                             <Route path="/profile" element={<ProfilePage />} />
-                            <Route path="/settings" element={<SettingsPage />} />
                             <Route path="*" element={<Navigate to="/" replace />} />
                           </Routes>
                         </div>

@@ -84,8 +84,6 @@ const api = {
   getAccidents: (signal) => handleApiRequest('/api/accidents', 'GET', null, signal),
   getSensorHistory: (signal) => handleApiRequest('/api/sensor/history', 'GET', null, signal),
   postSensorData: (data, signal) => handleApiRequest('/api/sensor', 'POST', data, signal),
-  getEmergencyEmail: (signal) => handleApiRequest('/api/settings/emergency-email', 'GET', null, signal),
-  setEmergencyEmail: (email, signal) => handleApiRequest('/api/settings/emergency-email', 'POST', { email }, signal),
 };
 
 export default api;
