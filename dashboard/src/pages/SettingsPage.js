@@ -74,15 +74,19 @@ export default function SettingsPage() {
             <Box component="form" onSubmit={handleSubmit}>
               <TextField
                 fullWidth
-                label="Emergency Email"
+                label="Emergency Emails"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                multiline
+                minRows={3}
+                maxRows={6}
                 InputProps={{
-                  startAdornment: <Email sx={{ mr: 1, color: 'text.secondary' }} />,
+                  startAdornment: <Email sx={{ mr: 1, color: 'text.secondary', alignSelf: 'flex-start', mt: 1 }} />,
                 }}
                 sx={{ mb: 2 }}
+                helperText="Enter one email per line, or separate multiple emails with commas."
               />
               <Button
                 variant="contained"
