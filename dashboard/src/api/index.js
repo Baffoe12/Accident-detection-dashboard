@@ -2,7 +2,7 @@ export const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL ||
   (window.location.hostname === 'localhost'
     ? 'http://localhost:4000'
-    : 'https://accident-detection-85af.onrender.com');
+    : 'https://accident-detection-skyf.onrender.com');
 
 const API_KEY = process.env.REACT_APP_API_KEY || 'safedrive_secret_key';
 
